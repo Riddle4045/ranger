@@ -62,6 +62,7 @@ import org.apache.ranger.plugin.util.RangerRESTUtils;
 import org.apache.ranger.plugin.util.SearchFilter;
 import org.apache.ranger.service.*;
 import org.apache.ranger.solr.SolrAccessAuditsService;
+import org.apache.ranger.trino.TrinoAccessAuditService;
 import org.apache.ranger.util.RestUtil;
 import org.apache.ranger.view.*;
 import org.codehaus.jackson.JsonGenerationException;
@@ -121,6 +122,9 @@ public class AssetMgr extends AssetMgrBase {
 
 	@Autowired
 	XPolicyService xPolicyService;
+
+	@Autowired
+	TrinoAccessAuditService trinoAccessAuditService;
 
 	@Autowired
 	RangerTransactionSynchronizationAdapter transactionSynchronizationAdapter;
@@ -1139,7 +1143,10 @@ public class AssetMgr extends AssetMgrBase {
             return elasticSearchAccessAuditsService.searchXAccessAudits(searchCriteria);
         } else if (RangerBizUtil.AUDIT_STORE_CloudWatch.equalsIgnoreCase(xaBizUtil.getAuditDBType())) {
             return cloudWatchAccessAuditsService.searchXAccessAudits(searchCriteria);
-        } else {
+        } else if (RangerBizUtil.AUDIT_STORE_TRINO.equalsIgnoreCase(xaBizUtil.getAuditDBType())) {
+			return trinoAccessAuditService.searchXAccessAudits(searchCriteria);
+		}
+		else {
             return xAccessAuditService.searchXAccessAudits(searchCriteria);
         }
     }

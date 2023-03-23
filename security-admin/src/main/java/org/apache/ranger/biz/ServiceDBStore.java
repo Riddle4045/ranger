@@ -408,7 +408,7 @@ public class ServiceDBStore extends AbstractServiceStore {
 							}
 						});
 					} catch (Throwable ex) {
-						LOG.error("ServiceDBStore.initStore(): Failed to update DB: " + ex);
+						LOG.error("ServiceDBStore.initStore(): Failed to update DB: ", ex);
 					}
 
 					legacyServiceDefsInitDone = true;
