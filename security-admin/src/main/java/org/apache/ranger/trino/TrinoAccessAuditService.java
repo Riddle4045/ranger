@@ -24,10 +24,16 @@ public class TrinoAccessAuditService
 
     private static final Logger log = LoggerFactory.getLogger(TrinoAccessAuditService.class);
 
+    private static final String TRUE = "1=1";
+
+    private static final String SEARCH_PARAM_USER = "requestUser";
+
+    private static final String TRINO_REQUEST_USER = "requser";
+
     private static final String TRINO =
             "jdbc:trino://localhost:8080/%s/%s";
 
-    private static final String geAllQuery = "SELECT * FROM trinologs.authzauditevent";
+    private static final String auditeventsQuery = "SELECT * FROM trinologs.authzauditevent WHERE ";
 
     private Properties properties = new Properties();
 
@@ -41,13 +47,14 @@ public class TrinoAccessAuditService
     public VXAccessAuditList searchXAccessAudits(SearchCriteria searchCriteria)
     {
         VXAccessAuditList accessAuditList = new VXAccessAuditList();
+        String predicate = generatePredicate(searchCriteria);
         try {
             VXAccessAudit auditEvent = new VXAccessAudit();
             try (TrinoConnection connection = (TrinoConnection) new TrinoDriver()
                     .connect(String.format(TRINO, "hive", "trinologs"), this.properties)) {
                 Statement statement = connection.createStatement();
                 statement.closeOnCompletion();
-                ResultSet resultSet = statement.executeQuery(geAllQuery);
+                ResultSet resultSet = statement.executeQuery(auditeventsQuery + predicate);
                 List<VXAccessAudit> audits = new ArrayList<>();
                 if ( resultSet != null)
                 {
@@ -87,6 +94,28 @@ public class TrinoAccessAuditService
             log.error("Failed to Fetch Audit logs", e);
         }
         return accessAuditList;
+    }
+
+    private String generatePredicate(SearchCriteria searchCriteria)
+    {
+        if (searchCriteria == null)  {
+            return TRUE;
+        }
+
+        if (searchCriteria.getParamList().containsKey(SEARCH_PARAM_USER)) {
+            ArrayList<String> userlist = (ArrayList<String>)searchCriteria.getParamList().get(SEARCH_PARAM_USER);
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < userlist.size(); i++) {
+                sb.append("'" + userlist.get(i) + "'");
+                if ( i != userlist.size() -1) sb.append(",");
+            }
+
+            if ( sb.length() > 0)
+            {
+                return String.format("%s in (%s)", TRINO_REQUEST_USER, sb);
+            }
+        }
+        return TRUE;
     }
 
 }
